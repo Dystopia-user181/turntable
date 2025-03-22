@@ -12,7 +12,7 @@ const x = new Var3(new Vector3(0, 3, 0)),
 	w = new Var3(new Vector3(0, 0, 0)),
 	a = new Var3(new Vector3(0, 0, 0));
 
-const frictionMultiplier = 300;
+const frictionMultiplier = 400;
 const friction = Mul3(Sub3(Cross(W, x), Add3(v, Cross(w, frictionDr))), frictionMultiplier);
 
 x.setDt(v);
@@ -65,7 +65,7 @@ export const Simulation = {
 	},
 	tick(_dt: number) {
 		const dt = Math.min(_dt, 0.2);
-		const n = Math.ceil(dt * 10000);
+		const n = Math.ceil(dt * 20000);
 		for (let i = 0; i < n; i++) this._tick(dt / n);
 	}
 };

@@ -20,10 +20,18 @@ document.body.appendChild(renderer.domElement);
 
 
 const ballRadius = Simulation.r;
-const ballShape = new THREE.BoxGeometry(2 * ballRadius, 2 * ballRadius, 2 * ballRadius);
+const ballShape = new THREE.SphereGeometry(ballRadius - 0.01, 30, 30);
 const ballColour = new THREE.MeshPhongMaterial({ color: 0xffff00 });
 const ball = new THREE.Mesh(ballShape, ballColour);
+const geometry = new THREE.CylinderGeometry(ballRadius, ballRadius, 0.5, 32);
+const material2 = new THREE.MeshBasicMaterial({ color: 0x000000 });
+const cylinder = new THREE.Mesh(geometry, material2);
+const cylinder2 = new THREE.Mesh(geometry, material2);
+const cylinder3 = new THREE.Mesh(geometry, material2);
 scene.add(ball);
+scene.add(cylinder);
+scene.add(cylinder2);
+scene.add(cylinder3);
 
 const planeShape = new THREE.PlaneGeometry(50, 50);
 const planeMaterial = new THREE.MeshPhongMaterial({ color: 0x777777, side: THREE.DoubleSide });
@@ -63,7 +71,15 @@ function animate(newTime: number) {
 	Simulation.tick(dt);
 	const realPos = Simulation.x.value.clone().add(new THREE.Vector3(0, 0, Simulation.r));
 	ball.position.copy(realPos);
+	cylinder.position.copy(realPos);
+	cylinder2.position.copy(realPos);
+	cylinder3.position.copy(realPos);
 	ball.setRotationFromAxisAngle(Simulation.a.value.clone().normalize(), Simulation.a.value.length());
+	cylinder.setRotationFromAxisAngle(Simulation.a.value.clone().normalize(), Simulation.a.value.length());
+	cylinder2.setRotationFromAxisAngle(Simulation.a.value.clone().normalize(), Simulation.a.value.length());
+	cylinder3.setRotationFromAxisAngle(Simulation.a.value.clone().normalize(), Simulation.a.value.length());
+	cylinder2.rotateZ(Math.PI / 2);
+	cylinder3.rotateX(Math.PI / 2);
 	plane.setRotationFromAxisAngle(new THREE.Vector3(0, 0, 1), Simulation.A.value.z);
 	if (Math.floor(newTime / addPeriod) !== Math.floor(time / addPeriod)) addPosToTracer(realPos);
 	renderer.render(scene, camera);
