@@ -1,0 +1,21 @@
+import * as THREE from "three";
+import { scene } from "./scene.js";
+
+const intensity = 1000;
+const light = new THREE.PointLight(0xffffff, intensity);
+scene.add(light);
+light.position.set(0, 0, 20);
+const light2 = new THREE.PointLight(0xffffff, intensity);
+scene.add(light2);
+light2.position.set(0, 10, 20);
+const light3 = new THREE.PointLight(0xffffff, intensity);
+scene.add(light3);
+light3.position.set(0, -10, 20);
+const light4 = new THREE.PointLight(0xffffff, intensity);
+scene.add(light4);
+light4.position.set(10, 0, 20);
+const light5 = new THREE.PointLight(0xffffff, intensity);
+scene.add(light5);
+light5.position.set(-10, 0, 20);
+const ambientLight = new THREE.AmbientLight(0x707070);
+scene.add(ambientLight);
