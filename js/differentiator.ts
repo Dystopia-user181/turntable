@@ -10,8 +10,27 @@ function toExpr3(expr: Expr3 | Vector3) {
 }
 
 abstract class Expr {
-	abstract eval(x?: Expr): number
+	tiedExpressions = [] as (Expr | Expr3)[];
+	needsUpdate = true;
+	storedValue = 0;
+	abstract _eval(): number
 	abstract dt(c?: number): Expr
+
+	eval() {
+		if (this.needsUpdate) {
+			this.needsUpdate = false;
+			return this.storedValue = this._eval();
+		}
+		return this.storedValue;
+	}
+
+	dispatchUpdate() {
+		if (this.needsUpdate) return;
+		this.needsUpdate = true;
+		for (const c of this.tiedExpressions) {
+			c.dispatchUpdate();
+		}
+	}
 
 	add(expr: Expr | number) {
 		return Add(this, expr);
@@ -31,8 +50,28 @@ abstract class Expr {
 }
 
 abstract class Expr3 {
-	abstract eval(x?: Expr3): Vector3
+	tiedExpressions = [] as (Expr | Expr3)[];
+	needsUpdate = true;
+	storedValue = new Vector3();
+	abstract _eval(): Vector3
 	abstract dt(c?: number): Expr3
+
+	eval() {
+		if (this.needsUpdate) {
+			this.needsUpdate = false;
+			return this.storedValue = this._eval();
+		}
+		return this.storedValue.clone();
+	}
+
+	dispatchUpdate() {
+		if (this.needsUpdate) return;
+		this.needsUpdate = true;
+		for (const c of this.tiedExpressions) {
+			c.dispatchUpdate();
+		}
+	}
+
 	add3(expr: Expr3 | Vector3) {
 		return Add3(this, expr);
 	}
@@ -57,7 +96,7 @@ export class Constant extends Expr {
 		this.value = value;
 	}
 
-	eval() { return this.value; }
+	_eval() { return this.value; }
 
 	dt() { return new Constant(0); }
 
@@ -71,7 +110,7 @@ export class Constant3 extends Expr3 {
 		this.value = value;
 	}
 
-	eval() { return this.value.clone(); }
+	_eval() { return this.value.clone(); }
 
 	dt() { return new Constant3(new Vector3()); }
 
@@ -79,18 +118,25 @@ export class Constant3 extends Expr3 {
 }
 
 export class Var extends Expr {
-	value = 0;
-	_dt: Expr[] = [new Constant(0)];
+	_value = 0;
+	_dt: Expr[] = [];
 	constructor(value: number) {
 		super();
-		this.value = value;
+		this._value = value;
+	}
+
+	get value() { return this._value; }
+
+	set value(x: number) {
+		this._value = x;
+		this.dispatchUpdate();
 	}
 
 	setDt(dt: Expr, c = 0) {
 		this._dt[c] = dt;
 	}
 
-	eval() {
+	_eval() {
 		return this.value;
 	}
 
@@ -102,18 +148,25 @@ export class Var extends Expr {
 }
 
 export class Var3 extends Expr3 {
-	value = new Vector3();
+	_value = new Vector3();
 	_dt: Expr3[] = [];
 	constructor(value: Vector3) {
 		super();
-		this.value = value;
+		this._value = value;
+	}
+
+	get value() { return this._value; }
+
+	set value(x: Vector3) {
+		this._value = x;
+		this.dispatchUpdate();
 	}
 
 	setDt(dt: Expr3, c = 0) {
 		this._dt[c] = dt;
 	}
 
-	eval() {
+	_eval() {
 		return this.value.clone();
 	}
 
@@ -129,9 +182,10 @@ class ExprNeg extends Expr {
 	constructor(expr1: Expr | number) {
 		super();
 		this.expr1 = toExpr(expr1);
+		this.expr1.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return -this.expr1.eval();
 	}
 
@@ -145,9 +199,10 @@ class ExprNeg3 extends Expr3 {
 	constructor(expr1: Expr3 | Vector3) {
 		super();
 		this.expr1 = toExpr3(expr1);
+		this.expr1.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval().clone().negate();
 	}
 
@@ -163,9 +218,11 @@ class ExprAdd extends Expr {
 		super();
 		this.expr1 = toExpr(expr1);
 		this.expr2 = toExpr(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval() + this.expr2.eval();
 	}
 
@@ -183,9 +240,11 @@ class ExprAdd3 extends Expr3 {
 		super();
 		this.expr1 = toExpr3(expr1);
 		this.expr2 = toExpr3(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval().clone().add(this.expr2.eval());
 	}
 
@@ -203,10 +262,12 @@ class ExprSub extends Expr {
 		super();
 		this.expr1 = toExpr(expr1);
 		this.expr2 = toExpr(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval(obj: Expr) {
-		return this.expr1.eval(obj) - this.expr2.eval(obj);
+	_eval() {
+		return this.expr1.eval() - this.expr2.eval();
 	}
 
 	dt(c = 0): Expr {
@@ -223,9 +284,11 @@ class ExprSub3 extends Expr3 {
 		super();
 		this.expr1 = toExpr3(expr1);
 		this.expr2 = toExpr3(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval().clone().sub(this.expr2.eval());
 	}
 
@@ -243,9 +306,11 @@ class ExprMul extends Expr {
 		super();
 		this.expr1 = toExpr(expr1);
 		this.expr2 = toExpr(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval() * this.expr2.eval();
 	}
 
@@ -263,9 +328,11 @@ class ExprMul3 extends Expr3 {
 		super();
 		this.expr1 = toExpr3(expr1);
 		this.expr2 = toExpr(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval().clone().multiplyScalar(this.expr2.eval());
 	}
 
@@ -283,9 +350,11 @@ class ExprDiv extends Expr {
 		super();
 		this.expr1 = toExpr(expr1);
 		this.expr2 = toExpr(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval() / this.expr2.eval();
 	}
 
@@ -301,9 +370,10 @@ class ExprPow extends Expr {
 		super();
 		this.expr1 = toExpr(expr1);
 		this.num = num;
+		this.expr1.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return Math.pow(this.expr1.eval(), this.num);
 	}
 
@@ -319,9 +389,10 @@ class ExprSin extends Expr {
 		super();
 		this.expr = toExpr(expr);
 		this.amplitude = am;
+		this.expr.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.amplitude * Math.sin(this.expr.eval());
 	}
 
@@ -337,9 +408,10 @@ class ExprCos extends Expr {
 		super();
 		this.expr = toExpr(expr);
 		this.amplitude = am;
+		this.expr.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.amplitude * Math.cos(this.expr.eval());
 	}
 
@@ -355,9 +427,11 @@ class ExprDot extends Expr {
 		super();
 		this.expr1 = toExpr3(expr1);
 		this.expr2 = toExpr3(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval().clone().dot(this.expr2.eval());
 	}
 
@@ -375,9 +449,11 @@ class ExprCross extends Expr3 {
 		super();
 		this.expr1 = toExpr3(expr1);
 		this.expr2 = toExpr3(expr2);
+		this.expr1.tiedExpressions.push(this);
+		this.expr2.tiedExpressions.push(this);
 	}
 
-	eval() {
+	_eval() {
 		return this.expr1.eval().clone().cross(this.expr2.eval());
 	}
 

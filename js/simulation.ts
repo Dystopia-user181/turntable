@@ -6,7 +6,7 @@ const m = 2, r = 2, I = 2 / 3 * m * r * r, Id = 5;
 
 const frictionDr = new Vector3(0, 0, -r);
 const x = new Var3(new Vector3(0, 3, 0)),
-	v = new Var3(new Vector3(-3.2, 0, 0)),
+	v = new Var3(new Vector3(-4, 0, 0)),
 	W = new Var3(new Vector3(0, 0, 3)),
 	A = new Var3(new Vector3(0, 0, 0)),
 	w = new Var3(new Vector3(0, 0, 0)),
@@ -41,31 +41,31 @@ export const Simulation = {
 		d3v.multiplyScalar(dt3);
 		d3w.multiplyScalar(dt3);
 		d3W.multiplyScalar(dt3);
-		x.value.add(v.value.clone().add(dv.clone().multiplyScalar(1 / 2))
+		x.value = x.eval().add(v.eval().add(dv.clone().multiplyScalar(1 / 2))
 			.add(d2v.clone().multiplyScalar(1 / 6))
 			.add(d3v.clone().multiplyScalar(1 / 24))
 			.multiplyScalar(dt));
-		a.value.add(w.value.clone().add(dw.clone().multiplyScalar(1 / 2))
+		a.value = a.eval().add(w.eval().add(dw.clone().multiplyScalar(1 / 2))
 			.add(d2w.clone().multiplyScalar(1 / 6))
 			.add(d3w.clone().multiplyScalar(1 / 24))
 			.multiplyScalar(dt));
-		A.value.add(W.value.clone().add(dW.clone().multiplyScalar(1 / 2))
+		A.value = A.eval().add(W.eval().add(dW.clone().multiplyScalar(1 / 2))
 			.add(d2W.clone().multiplyScalar(1 / 6))
 			.add(d3W.clone().multiplyScalar(1 / 24))
 			.multiplyScalar(dt));
-		v.value.add(dv.clone()
+		v.value = v.eval().add(dv.clone()
 			.add(d2v.clone().multiplyScalar(1 / 2))
 			.add(d3v.clone().multiplyScalar(1 / 6)));
-		w.value.add(dw.clone()
+		w.value = w.eval().add(dw.clone()
 			.add(d2w.clone().multiplyScalar(1 / 2))
 			.add(d3w.clone().multiplyScalar(1 / 6)));
-		W.value.add(dW.clone()
+		W.value = W.eval().add(dW.clone()
 			.add(d2W.clone().multiplyScalar(1 / 2))
 			.add(d3W.clone().multiplyScalar(1 / 6)));
 	},
 	tick(_dt: number) {
 		const dt = Math.min(_dt, 0.2);
-		const n = Math.ceil(dt * 20000);
+		const n = Math.ceil(dt * 40000);
 		for (let i = 0; i < n; i++) this._tick(dt / n);
 	}
 };
